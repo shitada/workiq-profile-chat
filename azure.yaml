@@ -1,0 +1,34 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+
+name: workiq-profile-chat
+metadata:
+  template: workiq-profile-chat@0.1.0
+services:
+  api:
+    project: ./src/api
+    language: dotnet
+    host: function
+  web:
+    project: ./src/web
+    language: ts
+    host: staticwebapp
+    dist: dist
+hooks:
+  preprovision:
+    windows:
+      shell: pwsh
+      run: ./scripts/preprovision.ps1
+      interactive: true
+    posix:
+      shell: sh
+      run: pwsh ./scripts/preprovision.ps1
+      interactive: true
+  postprovision:
+    windows:
+      shell: pwsh
+      run: ./scripts/postprovision.ps1
+      interactive: true
+    posix:
+      shell: sh
+      run: pwsh ./scripts/postprovision.ps1
+      interactive: true

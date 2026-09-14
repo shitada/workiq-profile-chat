@@ -1,0 +1,16 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+    "Authentication__TenantId": "00000000-0000-0000-0000-000000000000",
+    "Authentication__ApiClientId": "00000000-0000-0000-0000-000000000000",
+    "Authentication__RequiredRole": "ProfileChat.User",
+    "Authentication__ManagedIdentityClientId": "",
+    "Authentication__LocalClientSecret": "",
+    "Foundry__ProjectEndpoint": "https://example.services.ai.azure.com/api/projects/example",
+    "Foundry__AgentName": "workiq-profile-agent",
+    "Foundry__Scope": "https://ai.azure.com/.default",
+    "Authentication__WorkIqClientSecretExpiresOn": "2027-08-14T00:00:00Z"
+  }
+}
