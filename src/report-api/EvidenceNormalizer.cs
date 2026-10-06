@@ -19,8 +19,28 @@ public static class EvidenceNormalizer
         reportKind = state.Period.Kind, state.Period.ReportDate, state.Period.StartDate, state.Period.EndDate,
         state.Period.PreviousBusinessDate, timeZone = "Asia/Tokyo", subjectId = state.SubjectId,
         members = state.Members, userRequest = state.Message, existingDraft = state.Draft,
-        evidence = state.Evidence,
+        evidence = state.Evidence.Select(e => e with
+        {
+            Timestamp = e.Timestamp?.ToOffset(TimeSpan.FromHours(9)),
+            EndTime = e.EndTime?.ToOffset(TimeSpan.FromHours(9))
+        }),
         coverage = state.Coverage.Select(c => new { c.SourceType, c.Status, c.Count, c.Reason }),
+        dailyEvidenceGroups = state.Period.Kind == "daily" ? new
+        {
+            previousBusinessDate = state.Period.PreviousBusinessDate,
+            activityEvidenceIds = state.Evidence.Where(e => e.Category == "activity").Select(e => e.Id).ToArray(),
+            activityCalendarEvidenceIds = state.Evidence.Where(e => e.Category == "activity" && e.SourceType == "calendar")
+                .Select(e => e.Id).ToArray(),
+            reportDate = state.Period.ReportDate,
+            scheduleEvidenceIds = state.Evidence.Where(e => e.Category == "schedule").Select(e => e.Id).ToArray(),
+            rules = "前営業日の節はactivityEvidenceIds、当日の予定の節はscheduleEvidenceIdsだけを引用する。" +
+                "calendarは前営業日分でも予定の記録であり、参加・実施済みの根拠ではない。" +
+                "前営業日の節ではactivityCalendarEvidenceIdsをすべて参考予定として列挙し、参加・完了は未確認と明示する。" +
+                "当日の予定には採用されたscheduleEvidenceIdsをすべて表示する。" +
+                "scheduledMeetingCount/MinutesはscheduledMeetingDateの予定枠集計であり、当日の集計に流用しない。"
+        } : null,
+        scheduledMeetingDate = state.Period.Kind == "daily" ? state.Period.PreviousBusinessDate : null,
+        scheduledMeetingCategory = state.Period.Kind == "daily" ? "activity" : null,
         scheduledMeetingCount = state.Metrics.CalendarMeetingCount,
         scheduledMeetingMinutes = state.Metrics.ScheduledMeetingMinutes
     }, Json.Options);

@@ -543,25 +543,33 @@ public sealed partial class FoundryService(Settings settings, GenerationSpec spe
             stage = "generation_definition";
             var client = await ValidatedClient(project, false, ct);
             var input = EvidenceNormalizer.GenerationInput(state);
+            List<string> validationErrors = [];
             for (var attempt = 0; attempt < 2; attempt++)
             {
                 var options = BuildFinalOptions(spec);
                 options.InputItems.Add(ResponseItem.CreateUserMessageItem(input));
                 if (attempt > 0) options.InputItems.Add(ResponseItem.CreateUserMessageItem(
-                    "前回の出力形式が不正でした。必須見出しをすべて含むMarkdownを返し、具体的事実は既存の[E00001]形式の根拠IDで引用してください。不足は明示し、JSONは返さないでください。"));
+                    "前回の出力は検証に失敗したため採用していません。次の検査結果を修正してください: " +
+                    string.Join("; ", validationErrors.Take(16)) +
+                    "。必須見出しをすべて含むMarkdownを返してください。" +
+                    (state.Period.Kind == "daily" ? "dailyEvidenceGroupsの対象日とID区分を厳守してください。" +
+                    "前営業日の節に当日の予定を入れず、当日の予定に前営業日の根拠を使わないでください。" +
+                    "当日の予定はscheduleEvidenceIdsをすべて引用してください。予定を参加・完了実績にしないでください。" : "") +
+                    "具体的事実は既存の[E00001]形式の根拠IDで引用し、不足は明示してください。JSONは返さないでください。"));
                 stage = "generation_request";
                 var response = (await client.CreateResponseAsync(options, ct)).Value;
                 stage = "generation_response";
                 RecordUsage(state, response, false);
                 RequireCompleted(response);
-                var text = response.GetOutputText();
-                if (ReportValidator.Validate(text, state.Period.Kind, state.Evidence).Count == 0)
+                var text = ReportValidator.NormalizeMarkdown(response.GetOutputText());
+                validationErrors = ReportValidator.Validate(text, state.Period.Kind, state.Evidence);
+                if (validationErrors.Count == 0)
                 {
                     // Detect model upgrade during the run, not only before generation.
                     var deployment = (await project.Deployments.GetDeploymentAsync(spec.Config.ModelDeployment, ct)).Value;
                     if (deployment is not ModelDeployment model || model.ModelVersion != spec.Config.ExpectedModelVersion)
                         throw new ApiException(409, "model_version_changed", "生成中にモデルversionが変わりました。比較結果は無効です。");
-                    state.Text = ReportValidator.AppendReferences(text, state.Evidence, state.Coverage);
+                    state.Text = ReportValidator.AppendReferences(text, state.Evidence, state.Coverage, state.Period);
                     state.Phase = "completed";
                     return;
                 }

@@ -95,6 +95,16 @@ sourceIdは実IDだけです。sourceScopeは会話／threadの取得パスで�
 
 2026-10-06確認: [Foundry Responses API](https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/responses)、[Chat messagesのquery制約](https://learn.microsoft.com/en-us/graph/api/chat-list-messages?view=graph-rest-1.0)、[joinedTeamsのquery制約](https://learn.microsoft.com/en-us/graph/api/user-list-joinedteams?view=graph-rest-1.0)、[Channel一覧](https://learn.microsoft.com/en-us/graph/api/channel-list?view=graph-rest-1.0)、[Channel messages](https://learn.microsoft.com/en-us/graph/api/channel-list-messages?view=graph-rest-1.0)。Work IQの互換性はこれらのGraph仕様だけから成功保証しません。
 
+## 日報の期間別引用検証
+
+生成入力の `dailyEvidenceGroups` は前営業日の `activityEvidenceIds` と日報日の `scheduleEvidenceIds` を分けます。`scheduledMeetingCount/Minutes` は前営業日の予定枠集計であり、`scheduledMeetingDate` と `scheduledMeetingCategory` で対象を明示します。当日の集計として流用しません。
+
+最終出力では「前営業日に実施したこと」「当日の予定」の引用カテゴリを検証し、期間の取り違え・当日の採用済み予定の引用欠落・対象見出しの重複を拒否します。検査エラーを渡した再生成は1回までです。検証済み参照先にも期間区分を表示します。これは引用の配置検証であり、文章の全事実や会議への参加・完了を保証するものではありません。
+
+生成入力の根拠日時は `+09:00` に揃え、UTC日付をJSTの日付と取り違えにくくします。保存済み根拠の日時は変更しません。前営業日の採用済み予定も「参加・完了未確認」の参考予定として引用を要求します。「根拠と情報不足」の日付・根拠ID対応はモデルの説明を使わず、サーバーの対象期間・採用根拠から構成します。取得制限は従来のサーバー記録を参照します。Markdown全文を囲むコードフェンスだけを除去し、本文内のコードブロックは保持します。
+
+Work IQの既知の構造化応答は `workiq_structured` として、プレビューで確認できた取得先数・返却レコード数を表示します。文章形式の回答がないことを取得失敗と扱わず、HTTPエラー判定は維持します。返却数と日報への採用数は別です。旧保存状態でも、本文が空でraw JSONが未切り詰めなら読み取り時に表示用概要を再構成します。
+
 ## 認証と状態保存の前提
 
 - **EasyAuthを必須にしてissuer/audienceを検証し、未認証要求をworkerへ通さない構成が必須です。** workerはプラットフォーム提供の `x-ms-client-principal` とBearerを要求し、tenant・Object ID・roleを確認します。このヘッダーだけで、公開された開発サーバーを認証することはできません。

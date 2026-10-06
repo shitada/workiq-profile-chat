@@ -16,10 +16,15 @@ public static class WorkIqToolReplyReader
     {
         var parsed = Read(JsonSerializer.SerializeToElement(reply.Text), reply.Sequence);
         (string Text, bool Truncated)? raw = reply.RawText is null ? null : CaptureRaw(JsonSerializer.SerializeToElement(reply.RawText));
+        if (string.IsNullOrWhiteSpace(reply.Text) && reply.RawText is not null && !reply.RawTruncated)
+        {
+            var structured = Read(JsonSerializer.SerializeToElement(reply.RawText), reply.Sequence);
+            if (structured.Format == "workiq_structured") parsed = structured;
+        }
         return reply with
         {
             Text = parsed.Text,
-            Format = parsed.Format == "workiq_response" ? parsed.Format : reply.Format,
+            Format = parsed.Format is "workiq_response" or "workiq_structured" ? parsed.Format : reply.Format,
             IsError = reply.IsError || parsed.IsError,
             StatusCode = reply.StatusCode ?? parsed.StatusCode,
             ErrorCode = reply.ErrorCode ?? parsed.ErrorCode,
@@ -37,6 +42,8 @@ public static class WorkIqToolReplyReader
         string? code = null;
         int visited = 0;
         bool responseFound = false, envelopeFound = false;
+        bool structuredFound = false;
+        int structuredResults = 0, structuredRecords = 0;
 
         void Text(string value)
         {
@@ -88,11 +95,22 @@ public static class WorkIqToolReplyReader
             }
             if (value.ValueKind != JsonValueKind.Object) return;
             envelopeFound = true;
+            if (value.TryGetProperty("results", out var structuredResultsValue) &&
+                structuredResultsValue.ValueKind == JsonValueKind.Array)
+                structuredFound = true;
             if (value.TryGetProperty("isError", out var isError) && isError.ValueKind == JsonValueKind.True) error = true;
             if (value.TryGetProperty("statusCode", out var http) && http.TryGetInt32Safe(out int number) && number is >= 100 and <= 599)
             {
                 if (number >= 400) { error = true; if (status is null or < 400) status = number; }
                 else status ??= number;
+                if (value.TryGetProperty("data", out var data))
+                {
+                    structuredFound = true;
+                    structuredResults++;
+                    if (number is >= 200 and < 300 && data.ValueKind == JsonValueKind.Object)
+                        structuredRecords += data.TryGetProperty("value", out var records) && records.ValueKind == JsonValueKind.Array
+                            ? records.GetArrayLength() : 1;
+                }
             }
             if (value.TryGetProperty("error", out var serviceError) && serviceError.ValueKind == JsonValueKind.Object)
             {
@@ -132,8 +150,11 @@ public static class WorkIqToolReplyReader
         }
 
         Visit(output, 0);
+        if (structuredFound && texts.Count == 0)
+            Text($"構造化応答：プレビューで確認した取得先 {structuredResults}件、返却レコード {structuredRecords}件。" +
+                "日報の採用件数とは異なります。内容は下の受信JSONを確認してください。");
         var captured = CaptureRaw(output);
-        return new(sequence, responseFound ? "workiq_response" : texts.Count > 0 ? "mcp_text" :
+        return new(sequence, responseFound ? "workiq_response" : structuredFound ? "workiq_structured" : texts.Count > 0 ? "mcp_text" :
             envelopeFound ? "unrecognized_envelope" : "empty", error, status, code,
             string.Join("\n\n", texts.Distinct(StringComparer.Ordinal)), truncated, captured.Text, captured.Truncated);
     }
