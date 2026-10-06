@@ -15,6 +15,11 @@ param staticWebAppOrigin string
 param oauthCredentialExpiresOn string
 param foundryProjectEndpoint string
 param foundryAgentName string
+param reportAgentVersion string
+param reportCollectorVersion string
+param reportSharePointDriveId string
+param reportSharePointFolderId string
+param virtualNetworkSubnetId string
 
 var serviceName = 'api'
 var planName = 'plan-${name}'
@@ -44,6 +49,7 @@ module app 'br/public:avm/res/web/site:0.15.1' = {
       'azd-service-name': serviceName
     })
     serverFarmResourceId: plan.outputs.resourceId
+    virtualNetworkSubnetId: virtualNetworkSubnetId
     managedIdentities: {
       systemAssigned: false
       userAssignedResourceIds: [
@@ -95,6 +101,14 @@ module app 'br/public:avm/res/web/site:0.15.1' = {
       Authentication__ManagedIdentityClientId: managedIdentityClientId
       Foundry__ProjectEndpoint: foundryProjectEndpoint
       Foundry__AgentName: foundryAgentName
+      Foundry__AgentVersion: reportAgentVersion
+      Foundry__CollectorAgentName: 'workiq-report-collector'
+      Foundry__CollectorAgentVersion: reportCollectorVersion
+      Report__Provider: 'workiq'
+      Report__StorageServiceUri: storageBlobEndpoint
+      Report__SharePointDriveId: reportSharePointDriveId
+      Report__SharePointFolderId: reportSharePointFolderId
+      Report__TestYear: '2026'
       Foundry__Scope: 'https://ai.azure.com/.default'
       Authentication__WorkIqClientSecretExpiresOn: oauthCredentialExpiresOn
       OTEL_SERVICE_NAME: 'workiq-profile-chat-api'

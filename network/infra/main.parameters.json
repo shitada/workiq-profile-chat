@@ -1,0 +1,14 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "projectEnvironmentName": { "value": "${PROJECT_ENVIRONMENT_NAME}" },
+    "location": { "value": "${AZURE_LOCATION}" },
+    "resourceGroupName": { "value": "${AZURE_RESOURCE_GROUP}" },
+    "storageAccountName": { "value": "${AZURE_STORAGE_ACCOUNT_NAME}" },
+    "keyVaultName": { "value": "${AZURE_KEY_VAULT_NAME}" },
+    "networkAddressPrefix": { "value": "${AZURE_NETWORK_ADDRESS_PREFIX}" },
+    "functionSubnetPrefix": { "value": "${AZURE_FUNCTION_SUBNET_PREFIX}" },
+    "privateEndpointSubnetPrefix": { "value": "${AZURE_PRIVATE_ENDPOINT_SUBNET_PREFIX}" }
+  }
+}

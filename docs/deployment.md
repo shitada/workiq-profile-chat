@@ -7,6 +7,9 @@
 - Global Administrator available for Work IQ admin consent
 - Microsoft 365 admin available for Work IQ MCP tenant policy
 - GPT-4.1 availability/quota in the selected region
+- IPAMで承認されたVNet／Function subnet／Private Endpoint subnetのCIDR、Microsoft.Network／Microsoft.Appの登録と必要権限
+
+既存の公開Storageを使う環境は、以下の通常provisionを先に実行せず、[閉域化の段階移行](private-network.md)に従ってください。
 
 ## IaC-only workflow
 
@@ -25,6 +28,9 @@ azd env set AZURE_SUBSCRIPTION_ID '<subscription-id>'
 azd env set AZURE_TENANT_ID '<tenant-id>'
 azd env set AZURE_LOCATION 'eastus2'
 azd env set AZURE_RESOURCE_GROUP 'workiq_agent_test'
+azd env set AZURE_NETWORK_ADDRESS_PREFIX '<approved-vnet-cidr>'
+azd env set AZURE_FUNCTION_SUBNET_PREFIX '<approved-function-subnet-cidr>'
+azd env set AZURE_PRIVATE_ENDPOINT_SUBNET_PREFIX '<approved-pe-subnet-cidr>'
 
 azd provision --no-prompt
 azd deploy --no-prompt
@@ -48,9 +54,9 @@ azd deploy --no-prompt
 
 - Creates `workiq_agent_test` if absent.
 - Deploys all Azure resources with one location.
-- Applies `SecurityControl=Ignore` to the Function Storage account.
+- Storage／Key VaultのPublic accessをDisabledにし、Private Endpoint／Private DNSとFunctionの送信側VNet統合を構成します。Ignoreタグは付与しません。
 - Enables Function Easy Auth and shared Application Insights.
-- Work IQ OAuth secret を `Microsoft.KeyVault/vaults/secrets` 経由で保存します。現在の IaC は Key Vault の `publicNetworkAccess: 'Enabled'`、network ACL の `defaultAction: 'Allow'`、RBAC 有効という構成です。ネットワーク隔離は行っていません。
+- Work IQ OAuth secretを`Microsoft.KeyVault/vaults/secrets`経由で保存します。Key VaultのPublic accessはDisabled、network ACLはDeny、RBACは有効です。ARM管理操作とPrivate Endpoint経由のデータプレーン操作は区別します。
 
 ### postprovision
 
@@ -68,11 +74,11 @@ az resource list -g workiq_agent_test `
   --query "[].{name:name,type:type,location:location}" -o table
 
 az storage account show -g workiq_agent_test -n '<storage-name>' `
-  --query tags.SecurityControl -o tsv
+  --query "{publicNetworkAccess:publicNetworkAccess,allowSharedKeyAccess:allowSharedKeyAccess}" -o json
 ```
 
-Expected Storage tag value: `Ignore`.
+Expected Storage values: `publicNetworkAccess=Disabled`、`allowSharedKeyAccess=false`。PE承認状態、VNet内のPrivate DNS、health、CORS、認証付きチャットと閉域状態での再デプロイも確認してください。
 
-Azure Monitor also creates an Application Insights Smart Detection resource with `global` location. This platform-managed rule is the only Azure Monitor non-regional exception.
+Azure MonitorのApplication Insights Smart Detectionと、Private DNS zones／VNet linksは`global` locationです。その他のリージョナルリソースは同一locationを使用します。
 
 Verify Application Insights contains correlated Function and Foundry traces before adding users. Foundry server-side traces can contain prompt/tool content, so restrict telemetry access and retain it for only 30 days.

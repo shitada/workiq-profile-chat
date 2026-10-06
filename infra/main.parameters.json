@@ -26,6 +26,27 @@
     "allowedGroupId": {
       "value": "${ALLOWED_GROUP_ID}"
     },
+    "reportAgentVersion": {
+      "value": "${REPORT_AGENT_VERSION}"
+    },
+    "reportCollectorVersion": {
+      "value": "${REPORT_COLLECTOR_VERSION}"
+    },
+    "reportSharePointDriveId": {
+      "value": "${REPORT_SHAREPOINT_DRIVE_ID}"
+    },
+    "reportSharePointFolderId": {
+      "value": "${REPORT_SHAREPOINT_FOLDER_ID}"
+    },
+    "networkAddressPrefix": {
+      "value": "${AZURE_NETWORK_ADDRESS_PREFIX}"
+    },
+    "functionSubnetPrefix": {
+      "value": "${AZURE_FUNCTION_SUBNET_PREFIX}"
+    },
+    "privateEndpointSubnetPrefix": {
+      "value": "${AZURE_PRIVATE_ENDPOINT_SUBNET_PREFIX}"
+    },
     "workIqClientSecret": {
       "value": "${WORKIQ_CLIENT_SECRET}"
     },

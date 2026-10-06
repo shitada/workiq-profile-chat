@@ -1,0 +1,5 @@
+name: workiq-profile-chat-network
+infra:
+  provider: bicep
+  path: infra
+  module: main

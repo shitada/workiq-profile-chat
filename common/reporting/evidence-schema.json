@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Report evidence",
+  "type": "object",
+  "required": ["period", "evidence", "coverage"],
+  "properties": {
+    "period": {
+      "type": "object",
+      "required": ["kind", "startDate", "endDate"],
+      "properties": {
+        "kind": {"enum": ["daily", "personalWeekly", "managerWeekly"]},
+        "startDate": {"type":"string","format":"date"},
+        "endDate": {"type":"string","format":"date"},
+        "reportDate": {"type":["string","null"],"format":"date"},
+        "previousBusinessDate": {"type":["string","null"],"format":"date"}
+      }
+    },
+    "evidence": {
+      "type":"array",
+      "items": {
+        "type":"object",
+        "required":["id","sourceType","text"],
+        "properties": {
+          "id":{"type":"string","minLength":1},
+          "sourceType":{"type":"string","minLength":1},
+          "text":{"type":"string"},
+          "url":{"type":["string","null"]},
+          "sourceId":{"type":["string","null"]},
+          "sourceScope":{"type":["string","null"]},
+          "taskId":{"type":["string","null"]},
+          "acquisitionTool":{"type":["string","null"]},
+          "verificationStatus":{"enum":["verified","unverified","outOfPeriod","mismatch",null]},
+          "timestampPrecision":{"enum":["second","minute","day",null]},
+          "messageKind":{"enum":["ordinary","calendar","system","unknown",null]},
+          "activityStatus":{"enum":["planned","proposal","commitment","completion","unknown",null]},
+          "attribution":{"enum":["self","other","unknown",null]}
+        }
+      }
+    },
+    "coverage":{"type":"array","items":{"type":"object","required":["sourceType","status","count"],"properties":{"sourceType":{"type":"string"},"status":{"enum":["complete","partial","unavailable"]},"count":{"type":"integer","minimum":0},"reason":{"type":["string","null"]}}}}
+  }
+}

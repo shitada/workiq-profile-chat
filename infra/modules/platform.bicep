@@ -8,6 +8,13 @@ param deployerPrincipalId string
 param spaClientId string
 param apiClientId string
 param allowedGroupId string
+param reportAgentVersion string
+param reportCollectorVersion string
+param reportSharePointDriveId string
+param reportSharePointFolderId string
+param networkAddressPrefix string
+param functionSubnetPrefix string
+param privateEndpointSubnetPrefix string
 @secure()
 param workIqClientSecret string
 param oauthCredentialExpiresOn string
@@ -25,10 +32,7 @@ var keyVaultName = take('kv-${compactName}-${suffix}', 24)
 var foundryAccountName = take('aif-${compactName}-${suffix}', 64)
 var foundryProjectName = take('project-${compactName}', 64)
 var modelDeploymentName = 'gpt-4.1'
-var agentName = 'workiq-profile-agent'
-var storageTags = union(tags, {
-  SecurityControl: 'Ignore'
-})
+var agentName = 'workiq-report-agent'
 
 module logAnalytics 'br/public:avm/res/operational-insights/workspace:0.11.1' = {
   name: 'log-analytics'
@@ -65,19 +69,23 @@ module storage 'br/public:avm/res/storage/storage-account:0.8.3' = {
   params: {
     name: storageAccountName
     location: location
-    tags: storageTags
+    tags: tags
+    skuName: 'Standard_LRS'
     allowBlobPublicAccess: false
     allowSharedKeyAccess: false
     minimumTlsVersion: 'TLS1_2'
-    publicNetworkAccess: 'Enabled'
+    publicNetworkAccess: 'Disabled'
     networkAcls: {
-      bypass: 'AzureServices'
-      defaultAction: 'Allow'
+      bypass: 'None'
+      defaultAction: 'Deny'
     }
     blobServices: {
       containers: [
         {
           name: deploymentContainerName
+        }
+        {
+          name: 'report-runs'
         }
       ]
     }
@@ -93,10 +101,13 @@ module keyVault 'br/public:avm/res/key-vault/vault:0.14.0' = {
     sku: 'standard'
     enableRbacAuthorization: true
     enablePurgeProtection: true
-    publicNetworkAccess: 'Enabled'
+    enableVaultForDeployment: false
+    enableVaultForDiskEncryption: false
+    enableVaultForTemplateDeployment: false
+    publicNetworkAccess: 'Disabled'
     networkAcls: {
-      bypass: 'AzureServices'
-      defaultAction: 'Allow'
+      bypass: 'None'
+      defaultAction: 'Deny'
       ipRules: []
       virtualNetworkRules: []
     }
@@ -114,6 +125,24 @@ module staticWebApp 'br/public:avm/res/web/static-site:0.9.0' = {
       'azd-service-name': 'web'
     })
   }
+}
+
+module privateNetwork './private-network.bicep' = {
+  name: 'workiq-profile-chat-network'
+  params: {
+    name: name
+    location: location
+    tags: tags
+    addressPrefix: networkAddressPrefix
+    functionSubnetPrefix: functionSubnetPrefix
+    privateEndpointSubnetPrefix: privateEndpointSubnetPrefix
+    storageAccountName: storageAccountName
+    keyVaultName: keyVaultName
+  }
+  dependsOn: [
+    storage
+    keyVault
+  ]
 }
 
 module functionApp './function-app.bicep' = {
@@ -134,6 +163,11 @@ module functionApp './function-app.bicep' = {
     oauthCredentialExpiresOn: oauthCredentialExpiresOn
     foundryProjectEndpoint: 'https://${foundryAccountName}.services.ai.azure.com/api/projects/${foundryProjectName}'
     foundryAgentName: agentName
+    reportAgentVersion: reportAgentVersion
+    reportCollectorVersion: reportCollectorVersion
+    reportSharePointDriveId: reportSharePointDriveId
+    reportSharePointFolderId: reportSharePointFolderId
+    virtualNetworkSubnetId: privateNetwork.outputs.functionSubnetResourceId
   }
 }
 
@@ -161,7 +195,7 @@ module foundryAccount 'br/public:avm/res/cognitive-services/account:0.19.0' = {
         }
         sku: {
           name: 'GlobalStandard'
-          capacity: 10
+          capacity: 200
         }
         versionUpgradeOption: 'OnceNewDefaultVersionAvailable'
       }
@@ -318,6 +352,8 @@ resource projectPrivilegedLogReaderRole 'Microsoft.Authorization/roleAssignments
 output functionAppName string = functionApp.outputs.name
 output functionIdentityClientId string = functionIdentity.outputs.clientId
 output functionIdentityPrincipalId string = functionIdentity.outputs.principalId
+output virtualNetworkName string = privateNetwork.outputs.virtualNetworkName
+output functionSubnetResourceId string = privateNetwork.outputs.functionSubnetResourceId
 output staticWebAppName string = staticWebApp.outputs.name
 output apiUrl string = 'https://${functionApp.outputs.defaultHostname}'
 output webUrl string = 'https://${staticWebApp.outputs.defaultHostname}'

@@ -4,6 +4,15 @@ param()
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
+$networkMigration = [Environment]::GetEnvironmentVariable('PROFILE_CHAT_NETWORK_MIGRATION')
+if ($networkMigration -eq 'true') {
+    Write-Host 'Network migration: skipping OAuth connection and agent updates. Existing configuration is preserved.'
+    return
+}
+if (-not [string]::IsNullOrWhiteSpace($networkMigration) -and $networkMigration -ne 'false') {
+    throw 'PROFILE_CHAT_NETWORK_MIGRATION must be true or false.'
+}
+
 $required = @(
     'AZURE_TENANT_ID',
     'SPA_APP_OBJECT_ID',
@@ -203,31 +212,17 @@ if (-not $appInsightsConnected) {
     throw 'Failed to connect Application Insights to the Foundry project.'
 }
 
-$env:FOUNDRY_AGENT_NAME = 'workiq-profile-agent'
-$env:FOUNDRY_MODEL_DEPLOYMENT = 'gpt-4.1'
-$agentReady = $false
-$agentOutput = @()
-for ($attempt = 1; $attempt -le 6 -and -not $agentReady; $attempt++) {
-    $agentOutput = dotnet run --project ./tools/AgentSetup/AgentSetup.csproj --configuration Release
-    $agentReady = $LASTEXITCODE -eq 0
-    if (-not $agentReady -and $attempt -lt 6) {
-        Start-Sleep -Seconds ([Math]::Min(60, 5 * [Math]::Pow(2, $attempt - 1)))
+foreach ($versionSetting in @('REPORT_AGENT_VERSION', 'REPORT_COLLECTOR_VERSION')) {
+    if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($versionSetting))) {
+        throw "$versionSetting is required. Create the shared reporting agent definitions before provisioning."
     }
 }
-if (-not $agentReady) {
-    throw 'Foundry prompt agent configuration failed.'
-}
-$agentVersion = $agentOutput |
-    Where-Object { $_ -like 'AZD_ENV_AGENT_VERSION=*' } |
-    ForEach-Object { $_.Split('=', 2)[1] } |
-    Select-Object -Last 1
-if (-not [string]::IsNullOrWhiteSpace($agentVersion)) {
-    & azd env set FOUNDRY_AGENT_VERSION $agentVersion | Out-Null
-}
+Write-Host 'Reporting agents use pinned common definitions. Legacy profile-agent creation is skipped.'
 
 & azd env set VITE_TENANT_ID $env:AZURE_TENANT_ID | Out-Null
 & azd env set VITE_SPA_CLIENT_ID $env:SPA_CLIENT_ID | Out-Null
 & azd env set VITE_API_CLIENT_ID $env:API_CLIENT_ID | Out-Null
 & azd env set VITE_API_URL $env:API_URL | Out-Null
+& azd env set VITE_REPORT_PROVIDER workiq | Out-Null
 
 Write-Host 'Post-provision identity, secret, redirect, and Foundry agent configuration completed.'

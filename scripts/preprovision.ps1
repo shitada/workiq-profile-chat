@@ -4,6 +4,15 @@ param()
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
+$networkMigration = [Environment]::GetEnvironmentVariable('PROFILE_CHAT_NETWORK_MIGRATION')
+if ($networkMigration -eq 'true') {
+    Write-Host 'Network migration: skipping Entra bootstrap. Existing azd identity and secret settings are required.'
+    return
+}
+if (-not [string]::IsNullOrWhiteSpace($networkMigration) -and $networkMigration -ne 'false') {
+    throw 'PROFILE_CHAT_NETWORK_MIGRATION must be true or false.'
+}
+
 $required = @(
     'AZURE_ENV_NAME',
     'AZURE_SUBSCRIPTION_ID',
@@ -138,6 +147,8 @@ $principal = Invoke-AzJson @(
 Set-AzdValue -Name 'AZURE_PRINCIPAL_ID' -Value $principal.id
 
 $providers = @(
+    'Microsoft.App',
+    'Microsoft.Network',
     'Microsoft.Web',
     'Microsoft.CognitiveServices',
     'Microsoft.Storage',

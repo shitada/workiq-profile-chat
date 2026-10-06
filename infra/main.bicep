@@ -15,6 +15,15 @@ param deployerPrincipalId string
 param spaClientId string
 param apiClientId string
 param allowedGroupId string
+@minLength(1)
+param reportAgentVersion string
+@minLength(1)
+param reportCollectorVersion string
+param reportSharePointDriveId string = ''
+param reportSharePointFolderId string = ''
+param networkAddressPrefix string
+param functionSubnetPrefix string
+param privateEndpointSubnetPrefix string
 @secure()
 param workIqClientSecret string
 param oauthCredentialExpiresOn string
@@ -43,6 +52,13 @@ module platform './modules/platform.bicep' = {
     spaClientId: spaClientId
     apiClientId: apiClientId
     allowedGroupId: allowedGroupId
+    reportAgentVersion: reportAgentVersion
+    reportCollectorVersion: reportCollectorVersion
+    reportSharePointDriveId: reportSharePointDriveId
+    reportSharePointFolderId: reportSharePointFolderId
+    networkAddressPrefix: networkAddressPrefix
+    functionSubnetPrefix: functionSubnetPrefix
+    privateEndpointSubnetPrefix: privateEndpointSubnetPrefix
     workIqClientSecret: workIqClientSecret
     oauthCredentialExpiresOn: oauthCredentialExpiresOn
   }
@@ -66,3 +82,5 @@ output AZURE_AI_PROJECT_ENDPOINT string = platform.outputs.foundryProjectEndpoin
 output AZURE_AI_PROJECT_ID string = platform.outputs.foundryProjectId
 output API_MANAGED_IDENTITY_CLIENT_ID string = platform.outputs.functionIdentityClientId
 output API_MANAGED_IDENTITY_PRINCIPAL_ID string = platform.outputs.functionIdentityPrincipalId
+output AZURE_VIRTUAL_NETWORK_NAME string = platform.outputs.virtualNetworkName
+output AZURE_FUNCTION_SUBNET_ID string = platform.outputs.functionSubnetResourceId

@@ -1,0 +1,12 @@
+{
+  "version": "report-generation-v1",
+  "modelDeployment": "gpt-4.1",
+  "expectedModelVersion": "2025-04-14",
+  "temperature": 0,
+  "maxOutputTokens": 4000,
+  "inputTokenBudget": 24000,
+  "testYear": 2026,
+  "timeZone": "Asia/Tokyo",
+  "maxGraphCalls": 500,
+  "maxConcurrency": 4
+}

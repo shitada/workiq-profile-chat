@@ -42,9 +42,9 @@ Disallowed:
 
 ### Key Vault network boundary
 
-現在の `infra/modules/platform.bicep` は Key Vault の `publicNetworkAccess: 'Enabled'` と network ACL の `defaultAction: 'Allow'` を設定しています。Public endpoint へのネットワーク到達性を制限しておらず、Private Endpoint によるネットワーク隔離は構成していません。
+`infra/modules/platform.bicep`の目標構成はStorage／Key Vaultの`publicNetworkAccess: 'Disabled'`、network ACLの`defaultAction: 'Deny'`、`bypass: 'None'`です。Blob／vault Private EndpointとPrivate DNSを通じて接続します。既存環境への適用状況は[移行手順](private-network.md)で検証してください。
 
-ネットワーク到達性と secret へのアクセス権限は別です。Microsoft Entra 認証と RBAC による認可は必要であり、Public access が有効であることは匿名の secret 読み取りを許可する意味ではありません。ネットワーク隔離が要件の場合は、必要なアクセス経路を設計し、IaC を変更・検証してから隔離済みと説明してください。
+ネットワーク到達性とsecretへのアクセス権限は別です。Private Endpoint経由でもMicrosoft Entra認証とRBACによる認可が必要です。ARM管理プレーン、公開のWeb／Function API、Foundry／Work IQ通信は今回の閉域化対象外です。Ignoreタグの再付与や認証無効化を復旧手段にしません。
 
 参照: [Azure Key Vault のネットワーク セキュリティ](https://learn.microsoft.com/en-us/azure/key-vault/general/network-security)
 

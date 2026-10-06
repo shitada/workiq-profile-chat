@@ -1,0 +1,11 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "resourceGroupName": { "value": "${AZURE_RESOURCE_GROUP}" },
+    "functionAppName": { "value": "${AZURE_FUNCTION_NAME}" },
+    "functionSubnetResourceId": { "value": "${AZURE_FUNCTION_SUBNET_ID}" },
+    "storageStateBase64": { "value": "${PRIVATE_STORAGE_STATE_BASE64}" },
+    "vaultStateBase64": { "value": "${PRIVATE_VAULT_STATE_BASE64}" }
+  }
+}

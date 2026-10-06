@@ -5,11 +5,11 @@ metadata:
   template: workiq-profile-chat@0.1.0
 services:
   api:
-    project: ./src/api
+    project: ./src/report-api
     language: dotnet
     host: function
   web:
-    project: ./src/web
+    project: ./src/report-web
     language: ts
     host: staticwebapp
     dist: dist

@@ -14,6 +14,10 @@
 | MCP mutation appears | Stop release; agent allowlist or tenant policy is incorrect |
 | MCP timeout | Non-streaming MCP calls have a 100-second limit; narrow the question |
 | SWA can't call Function | Check Function CORS origin and CSP `connect-src` |
+| NetworkError、healthも503 | 起動用StorageのPublic access／Private Endpoint／DNS／FunctionのVNet統合／Managed IdentityのRBACを確認。healthが失敗する段階ではユーザーのFoundry権限を広げない |
+| 閉域後にデプロイ失敗 | SCMへの到達性、利用中azdのFlex OneDeploy、PE経由のパッケージ保存を確認。Storageを一時公開せず、必要なら承認済みVNet内実行環境を使用 |
+| PCからKey Vaultのsecret一覧を取得できない | Public access DisabledならVNet外からのデータプレーン接続は拒否される。ARM更新経路とは区別し、VNet内実行環境とRBACを確認 |
+| Ignoreタグが消えた | ガバナンス自動化の可能性があるためActivity Logを確認。恒久対応は[Private接続](private-network.md)とし、タグの再付与ループにしない |
 | No Foundry traces | Verify the Application Insights project connection and RBAC |
 | Secret expiry banner appears | Run the rotation script and validate consent before removing old credential |
 | User A data appears for User B | Disable the app immediately and investigate OBO/response ID isolation |

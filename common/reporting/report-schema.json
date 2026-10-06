@@ -1,0 +1,15 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "title":"Completed report envelope",
+  "type":"object",
+  "required":["kind","runId","text","period","evidence","coverage","metrics"],
+  "properties":{
+    "kind":{"const":"completed"},
+    "runId":{"type":"string","minLength":1},
+    "text":{"type":"string","minLength":1},
+    "period":{"type":"object"},
+    "evidence":{"type":"array"},
+    "coverage":{"type":"array"},
+    "metrics":{"type":"object"}
+  }
+}

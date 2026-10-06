@@ -8,10 +8,14 @@
 **/TestResults/
 **/test-results/
 **/playwright-report/
+**/__pycache__/
+**/artifacts/
 **/local.settings.json
 **/node_modules/
 **/dist/
 infra/main.json
+network/infra/main.json
+network/cutover/infra/main.json
 *.user
 *.suo
 *.log

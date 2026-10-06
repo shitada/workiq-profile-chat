@@ -1,0 +1,5 @@
+{
+  "version": "2.0",
+  "functionTimeout": "00:04:00",
+  "logging": { "logLevel": { "Default": "Warning", "GraphReportChat": "Information", "System.Net.Http.HttpClient": "Warning" } }
+}

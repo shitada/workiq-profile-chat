@@ -27,7 +27,7 @@ union requests, dependencies, traces
 
 ## Work IQ secret expiry
 
-The authenticated UI calls `/api/status`. The API compares the non-secret expiration timestamp deployed with the Function configuration. When 30 days or less remain, the UI displays a rotation warning. この API は secret 値を返しません。Key Vault は RBAC と purge protection を使用しますが、現在の IaC では Public access が有効で、network ACL の既定動作は Allow です。ネットワーク隔離済みとは扱わないでください。
+The authenticated UI calls `/api/status`. The API compares the non-secret expiration timestamp deployed with the Function configuration. When 30 days or less remain, the UI displays a rotation warning. このAPIはsecret値を返しません。IaCの目標構成はKey VaultのPublic access Disabled、Private Endpoint、RBAC、purge protectionです。既存環境は[移行・検証](private-network.md)を完了するまで閉域化済みとは扱わないでください。
 
 Rotate safely:
 
@@ -46,6 +46,8 @@ The script:
 5. Leaves the previous credential in place until end-user consent validation succeeds.
 
 Remove the previous Entra credential only after verification.
+
+rotation scriptはARM経由のsecret更新とFoundry connection更新を使います。通常の`az keyvault secret show/list`とは異なり、Key Vaultのデータプレーンへ直接接続する処理ではありません。閉域後のデータ直接管理にはVNet内の実行環境と必要なRBACを用意してください。
 
 ## Adding users
 
